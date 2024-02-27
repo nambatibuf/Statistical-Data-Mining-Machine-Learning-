@@ -1,0 +1,356 @@
+---
+title: "Homework 3. Clustering Practice (80 Points)"
+author: "Nikhil Ambati"
+date: '2023-10-14'
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(cluster)
+library(magrittr)
+library(plotly)
+#library(caret)
+library(ggbiplot)
+library(cowplot)
+library(factoextra)
+#Plotting Dendrogram
+library(ggdendro)
+library(data.table)
+```
+
+
+
+# Part 1. USArrests Dataset and Hierarchical Clustering (20 Points)
+
+Consider the “USArrests” data. It is a built-in dataset you may directly get 
+in RStudio. Perform hierarchical clustering on the observations (states) and 
+answer the following questions.
+
+
+```{r}
+head(USArrests)
+```
+
+
+**Q1.1.** Using hierarchical clustering with complete linkage and Euclidean distance, 
+cluster the states. (5 points)
+
+
+```{r}
+set.seed(200)
+clust_USArrests <- hclust(dist(USArrests),method='complete')
+plot(clust_USArrests, main = "Complete Linkage",
+    xlab = "", sub = "", cex = .9)
+```
+
+
+**Q1.2.** Cut the dendrogram at a height that results in three distinct clusters. 
+Interpret the clusters. Which states belong to which clusters? (5 points)
+
+
+```{r}
+set.seed(200)
+cut <- cutree(clust_USArrests, 3)
+table(cut)
+```
+
+```{r}
+plot(clust_USArrests)
+abline(h=148, col="blue")
+table(cut)
+```
+
+**Q1.3** Hierarchically cluster the states using complete linkage and Euclidean 
+distance, after scaling the variables to have standard deviation one. Obtain three clusters. Which states belong to which clusters?(5 points)
+
+```{r}
+set.seed(200)
+USArrests_scale <- scale(USArrests)
+cl_USArrests_scale <- hclust(dist(USArrests_scale),method='complete')
+plot(cl_USArrests_scale,main='Dendogram after Scaling')
+```
+```{r}
+set.seed(200)
+scale_cut <- cutree(cl_USArrests_scale, 3)
+table(scale_cut)
+```
+
+
+```{r}
+plot(cl_USArrests_scale)
+abline(h=4,col="BLUE")
+scale_cut
+```
+
+
+
+
+**Q1.4** What effect does scaling the variables have on the hierarchical 
+clustering obtained? In your opinion, should the variables be scaled before 
+the inter-observation dissimilarities are computed? Provide a justification 
+for your answer. *(5 points)*
+
+
+*Answer:* Scaling the variables before performing hierarchical clustering is a important step . Failure to scale the variables can lead to skewed clustering results, where certain variables with higher variance may impact the influence the clustering process. Scaling the variables is essential for a more balanced and reliable hierarchical clustering analysis. Scaling also cover smaller and and entire set clusters.
+
+# Part 2. Market Segmentation (60 Points)
+
+An advertisement division of large club store needs to perform customer analysis 
+the store customers in order to create a segmentation for more targeted marketing campaign 
+
+You task is to identify similar customers and characterize them (at least some of them). 
+In other word perform clustering and identify customers segmentation.
+
+This data-set is derived from https://www.kaggle.com/imakash3011/customer-personality-analysis
+
+```
+Colomns description:
+People
+  ID: Customer's unique identifier
+  Year_Birth: Customer's birth year
+  Education: Customer's education level
+  Marital_Status: Customer's marital status
+  Income: Customer's yearly household income
+  Kidhome: Number of children in customer's household
+  Teenhome: Number of teenagers in customer's household
+  Dt_Customer: Date of customer's enrollment with the company
+  Recency: Number of days since customer's last purchase
+  Complain: 1 if the customer complained in the last 2 years, 0 otherwise
+
+Products
+
+  MntWines: Amount spent on wine in last 2 years
+  MntFruits: Amount spent on fruits in last 2 years
+  MntMeatProducts: Amount spent on meat in last 2 years
+  MntFishProducts: Amount spent on fish in last 2 years
+  MntSweetProducts: Amount spent on sweets in last 2 years
+  MntGoldProds: Amount spent on gold in last 2 years
+
+Place
+  NumWebPurchases: Number of purchases made through the company’s website
+  NumStorePurchases: Number of purchases made directly in stores
+```
+
+Assume that data was current on 2014-07-01
+
+**Q2.1.** Read Dataset and Data Conversion to Proper Data Format *(12 points)*
+
+Read "m_marketing_campaign.csv" using `data.table::fread` command, examine the data.
+
+
+```{r}
+# fread m_marketing_campaign.csv and save it as df (2 points)
+data_market <- fread("C:/Users/Nikhil/Sem 2/SDM 2/HomeWork3/m_marketing_campaign.csv")
+df_market <- as.data.frame(data_market)
+head(df_market)
+summary(df_market)
+```
+
+
+
+```{r}
+# Convert Year_Birth to Age (assume that current date is 2014-07-01) (2 points)
+current_date <- as.Date("2014-07-01")
+current_year <- as.numeric(format(current_date, format = "%Y"))
+df_market$Age <- ((current_year)-df_market$Year_Birth)
+
+df_market$Dt_Customer<-as.Date(as.Date(df_market$Dt_Customer,"%d-%m-%Y"),"%Y-%m-%d")
+
+df_market$MembershipDays <- as.numeric(floor( difftime(current_date,df_market$Dt_Customer,units="days")))
+head(df_market)
+
+```
+
+```{r}
+# Summarize Education column (use table function) (2 points)
+
+table(df_market$Education)
+# Lets create a new column EducationLevel from Education
+# Lets treat Education column as ordinal categories and use years in education as a levels 
+# for distance calculations (2 points)
+# Assuming following order and years spend for education:
+#    HighSchool (13 years), Associate(15 years), Bachelor(17 years), Master(19 years), PhD(22 years)
+# create EducationLevel from Education
+# hint: use recode function (in mutate statement)
+df_market <- df_market %>% 
+  mutate(EducationLevel = recode(Education,"HighSchool"=13,"Associate"=15,"Bachelor"=17,"PhD"=22,"Master"=19))
+head(df_market)
+
+```
+
+```{r}
+# Summarize Marital_Status column (use table function) 
+
+
+# Lets convert single Marital_Status categories for 5 separate binary categories  (2 points)
+# Divorced, Married, Single, Together and Widow, the value will be 1 if customer 
+# is in that category and 0 if customer is not
+# hint: use dummy_cols from fastDummies or dummyVars from caret package, model.matrix 
+# or simple comparison (there are only 5 groups)
+# Keep Marital_Status for later use
+df_market<-fastDummies::dummy_cols(df_market,select_columns="Marital_Status")
+head(df_market)
+```
+
+```{r}
+# lets remove columns which we will no longer use:
+# remove ID, Year_Birth, Dt_Customer, Education, Marital_Status
+# and save it as df_sel 
+df_sel<-select(df_market,-c("ID","Year_Birth", "Dt_Customer","Education","Marital_Status"))
+head(df_sel)
+
+```
+
+
+```{r}
+# lets scale (2 points)
+# run scale function on df_sel and save it as df_scale
+# that will be our scaled values which we will use for analysis
+df_scale<-scale(df_sel)
+write.csv(df_scale,file="dsfjndsf.csv")
+```
+
+## PCA
+
+**Q2.2.** Run PCA, make biplot and scree plot *(6 points)*
+
+```{r}
+# Run PCA on df_scale, make biplot and scree plot/percentage variance explained plot
+# save as pc_out, we will use pc_out$x[,1] and pc_out$x[,2] later for plotting
+
+pc_out<-prcomp(df_scale)
+ggbiplot(pc_out,scale=0)
+
+```
+
+```{r}
+var <- (pc_out$sdev)^2 / sum(pc_out$sdev^2)
+round(var,3)
+qplot(c(1:21), var) +
+  geom_line() +
+  xlab("Principal Component") +
+  ylab("Variance") +
+  ggtitle("Scree-Plot") +
+  scale_y_continuous(breaks = seq(0, 0.30, 0.05))
+```
+
+**Q2.3** Comment on observation (any visible distinct clusters?) *(2 points)*
+
+I could see we already have 2 clusters from the above plot.
+
+
+## Cluster with K-Means
+In questions Q2.4 to Q2.9 use K-Means method for clustering
+
+### Selecting Number of Clusters
+
+**Q2.4** Select optimal number of clusters using elbow method. *(4 points)*
+
+
+```{r}
+set.seed(2)
+ws <- sapply(1:14,function(k){kmeans(df_scale,k,nstart=10)$tot.withinss})
+  ggplot(data.frame(k=1:14,WSS=ws), aes(x=k, y=WSS)) + geom_point(size=3) + geom_line() +
+  labs(title="Elbow plost", x="Number of clusters", y="wss")
+```
+# Here we select 2,10 as optimal clusters for elbow method, as we can see the elbow at those points.
+**Q2.5** Select optimal number of clusters using Gap Statistic.*(4 points)*
+
+```{r}
+set.seed((200))
+gap_stat <- clusGap(df_scale, FUNcluster = kmeans, K.max = 10,)
+plot(gap_stat)
+```
+#I feel we have optimal clusters at 2 and 9 for Gap Statistic.
+**Q2.6** Select optimal number of clusters using Silhouette method.*(4 points)*
+
+```{r}
+fviz_nbclust(df_scale,kmeans,method=c("silhouette"),print.summary = TRUE,barfill = "blue",barcolor = "blue",)
+```
+
+#I feel that 2 and 9 are optimal clusters for silhuettes.
+**Q2.7** Which k will you choose based on elbow, gap statistics and Silhouette 
+as well as clustering task (market segmentation for advertisement purposes, that is two groups don't provide sufficient benefit over a single groups)?*(4 points)*
+
+I will choose 2 & 5 cluster for elbow,gap and Silhouette. So Initally I have chosen eblow method and later refined my choice of clusters using and gap & Silhouettes. As 2 doesn't choose market segmentation I will got for  the next value which will be 5. 
+
+## Clusters Visulalization
+
+**Q2.8** Make k-Means clusters with selected k_kmeans (store result as km_out).
+Plot your k_kmeans clusters on biplot (just PC1 vs PC2) by coloring points by their cluster id.*(4 points)*
+
+
+```{r}
+km_out <- kmeans(df_scale, 4)
+custom_colors <- c("red", "blue", "green", "black")
+ggbiplot(pc_out, groups = km_out$cluster, scale = 0,ellipse = TRUE, circle = TRUE)
+```
+
+**Q2.9** Do you see any grouping? Comment on you observation.*(2 points)*
+
+*Answer*... I would see we have 4 grouping considering the above plot
+
+
+## Characterizing Cluster
+
+**Q2.10** Perform descriptive statistics analysis on obtained cluster. 
+Based on that does one or more group have a distinct characteristics? *(8 points)*
+Hint: add cluster column to original df dataframe
+
+```{r}
+df_market$cluster <- km_out$cluster
+cl_summary <- fviz_cluster(km_out, data=df_scale, ellipse = TRUE, ellipse.type = "convex", xlab = NULL,
+  ylab = NULL,outlier.color = "black",ggtheme = theme_grey())
+cl_summary
+
+```
+
+
+```{r}
+eu_dist <- dist(df_scale,method='euclidean')
+```
+
+
+
+## Cluster with Hierarchical Clustering
+
+
+**Q2.11** Perform clustering with Hierarchical method (Do you need to use scaling here?).
+Try complete, single and average linkage.
+Plot dendagram, based on it choose linkage and number of clusters, if possible, explain your
+choice. *(8 points)*
+
+```{r}
+
+single<-hclust(eu_dist,method='single')
+average<-hclust(eu_dist,method='average')
+complete<-hclust(eu_dist,method='complete')
+
+
+```
+
+
+```{r}
+plot(single,main="Single Linkage", cex =  .5)
+plot(average,main="Average Linkage",cex=.5)
+plot(complete,main="Complete Linkage",cex=.5)
+
+
+```
+
+```{r}
+table(cutree(single, 11))
+table(cutree(average,11))
+table(cutree(complete,11))
+```
+
+# Additional grading criteria:
+i feel that complete linkage look good and then average and then single.
+**G3.1** Was all random methods properly seeded? *(2 points)*
+yes all random methods are random seeded.

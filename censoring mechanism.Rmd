@@ -1,0 +1,73 @@
+---
+title: "EAS509 Homework 6 (50 points)."
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+library(survminer)
+library(survival)
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Submit your answers as a single pdf attach all R code. Failure to do so will result in grade reduction.
+
+# Question 1 (25 points)
+For each question, state whether or not the censoring mechanism is independent. Justify your answer with a short statement. (5 points for each)
+
+### a)	In a study of disease relapse, due to a careless research scientist, all patients whose phone numbers begin with the number “2” are lost to follow up.
+
+There are 2 types of scenarios we can think of:
+
+1) Censoring mechanism is independent if we assume that phone number digits have no relationship with diseases.
+2) Censoring mechanism is dependent because depending on phone number we can get area code or geographical location where some diseases will occur in specific areas which in return those areas can be also identified by phone codess.
+
+### b)	In a study of longevity, a formatting error causes all patient ages that exceed 99 years to be lost (i.e. we know that those patients are more than 99 years old, but we do not know their exact ages).
+
+Censoring mechanism is independent as we will not considr anybody at all because If We remove all people who lived more than 99 and died and people who survived for short time after 99 there wont be considered or left to study
+
+### c)	Hospital A conducts a study of longevity. However, very sick patients tend to be transferred to Hospital B, and are lost to follow up.
+
+Censoring mechanism is very much dependent here, as there are 2 types of hospitals for types of dieseases. Hospital B will get more sick patients with dangeours dieases and also as it has facilities more man power to treat such diseases when compared to hospital A. Also, when we consider the morality rate Hospital B will have more because of treating such deadly diseases.
+
+### d)	In a study of unemployment duration, the people who find work earlier are less motivated to stay in touch with study investigators, and therefore are more likely to be lost to follow up.
+
+Censoring mechanism is dependent here, as people will ofcourse dropout if they land  a job much earlier before the investigation is finished.
+
+### e)	In a study of pregnancy duration, women who deliver their babies pre-term are more likely to do so away from their usual hospital, and thus are more likely to be censored, relative to women who deliver full-term babies.
+
+Censoring mechanism is dependent here, as women willn't here visit the hospital as babies are born earlier than regular estimated time..
+
+# Question 2 (25 points)
+A data set from "DATA.csv" represents publication times for 244 clinical trials 
+funded by the National Heart, Lung, and Blood Institute. Using Log-Rank Test 
+in R, estimate if the Kaplan-Meier Survival Curves from two subpopulations 
+stratified by “posres” variable are significantly different.
+
+```{r }
+
+clinic_data <- read.csv("DATA.csv")
+head(clinic_data)
+sm <- survfit(Surv(time, status) ~ posres, data = clinic_data)
+ggsurvplot(sm, data=clinic_data)
+lrt <- survdiff(Surv(time, status) ~ posres, data = clinic_data)
+lrt
+```
+### We can observe that output of P-value is 0.4>0.05(default value). With this we dont have enough evidence to reject the null hypothesis. So, I can say that NO Significant Difference is observed betwen Kaplan-Meier Survival Curves from two subpopulations stratified by “posres” variable . 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

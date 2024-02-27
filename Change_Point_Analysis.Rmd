@@ -1,0 +1,153 @@
+---
+title: "EAS509 Homework 5 (40 points). Key"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+
+library(tibble)
+library(dplyr)
+library(tidyr)
+library(readr)
+library(lubridate)
+library(ggplot2)
+library(changepoint)
+
+```
+
+Submit your answers as a single pdf attach all R code. Failure to do so will result in grade reduction.
+
+# Question 1 (40 points)
+
+High-Performance Computing (HPC) resources (a.k.a. supercomputers) are complex systems. 
+Slight changes in hardware or software can drastically affect their performance. 
+For example, a corrupted lookup table in a network switch, an update of a linux 
+kernel, a drop of hardware support in a new software version, and so on. 
+
+One way to ensure the top performance of HPC resources is to utilize continuous 
+performance monitoring where the same application is executed with the same input 
+on a regular basis (for example, daily). In a perfect world, the execution time 
+will be exactly the same, but in reality, it varies due to system jitter 
+(this is partially due to system processes taking resources to do their jobs).
+
+So normally, the execution time will be distributed around a certain value. 
+If performance degradation occurs, the execution time will be distributed around different value.
+
+An automated system that inform system administrators on performance change can be a very handy tool.
+
+In this exercise, your task will be to identify the number and location of the change point where performance was changed. NWChem, an Quantum Chemistry application, was used to probe the performance of UB HPC cluster.
+
+
+1.1 `UBHPC_8cores_NWChem_Wall_Clock_Time.csv` file contains execution time (same as run time or wall time) of NWChem performing same reference calculation. Read the file and plot it run time on date. (4 points)
+
+
+```{r}
+df_NWChem<- read.csv('UBHPC_8cores_NWChem_Wall_Clock_Time.csv')
+df_NWChem$date<- as.Date(df_NWChem$date, format = "%m/%d/%Y %H:%M")
+ggplot(df_NWChem, aes(x = date, y = run_time)) +
+  geom_line(col = "black") +
+  labs(title = "Run time over time",x = "Date",y ="Run_time")
+ts.plot(df_NWChem$run_time)
+```
+
+
+
+1.2 How many segments/change points can you eyeball? What are they? (4 points)
+# I could identify 2 segments and 66 is the changepoint.
+
+```{r}
+gp.amoc=cpt.mean(df_NWChem$run_time)
+cpts(gp.amoc)
+plot(gp.amoc)
+```
+
+1.3 Create another column `seg` and assign segment number to it based on previous question. (4 points)
+
+```{r}
+df_NWChem$seg <- 1
+df_NWChem$seg[66:292] <- 2
+head(df_NWChem)
+```
+
+
+
+1.4 Make a histagramm plot of all run times. (4 points)
+
+```{r}
+
+ggplot(df_NWChem, aes(x = run_time)) +
+  geom_histogram(binwidth = 1, fill = "red", color = "black") 
+
+#or
+
+hist(df_NWChem$run_time)
+```
+
+1.5 Make a histogram plot of for each segments. (4 points)
+  
+
+```{r}
+hist(df_NWChem[df_NWChem$seg==1,]$run_time, main="Seg 1 Plot")
+hist(df_NWChem[df_NWChem$seg==2,]$run_time,main="Seg 2 Plot")
+ggplot(df_NWChem, aes(x = seg)) +
+  geom_histogram(binwidth = 0.06, fill = "red", color = "black") 
+
+```
+1.6 Does it look reasonably normal? (4 points)
+#No, its not looking reasonably normal. These we can clearly see in our above plot. As there's a break. Also we did below to prove it.
+```{r}
+ks.test(df_NWChem$run_time,pnorm,mean=mean(df_NWChem$run_time),sd=sd(df_NWChem$run_time))
+acf(df_NWChem$run_time)
+```
+
+1.7 Identify change points with `cpt.meanvar` function. Use `PELT` method and `Normal` for `test.stat`. Plot your data with identified segments mean.  (4 points)
+
+> hints:
+> run `cpt.meanvar` on the `run_time` column (i.e. `df$run_time`)
+>
+> use `pen.value` funtion to see current value of penalty (MBIC value),
+> use that value as guide for your penalty range in next question.
+> 
+
+```{r}
+df_pelt <- cpt.meanvar(df_NWChem$run_time,test.stat='Normal',method='PELT',penalty='MBIC',pen.value = '2*log(n)')
+cpts(df_pelt)
+param.est(df_pelt)
+plot(df_pelt)
+```
+1.8 Using CROPS procedure find optimal number of points. Plot data with optimal number of segments. (4 points)
+
+```{r}
+crops <- cpt.var(df_NWChem$run_time,method="PELT",penalty="CROPS",pen.value=c(5,500))
+pen.value.full(crops)
+cpts.full(crops)
+plot(crops, diagnostic=TRUE)
+abline(v=6,col='red')
+abline(v=8,col='red')
+plot(crops, ncpts=6)
+plot(crops, ncpts=8)
+``` 
+
+1.9 Does your initial segment guess matches with optimized by CROPS? (4 points)
+
+#No my initial guess was only 2 segements, but now I have 6 segements or 8 segements as we discovered above.
+
+
+1.10 The run-time in this example does not really follow normal distribution. 
+What to do you think can we still use this method to identify changepoints? (4 points)
+
+#Yes, I feel that PELT methods which we call Pruned Exact Linear Time is a non-parametric method. Also we know that we can use this method to find change points for non-normalized data. As PELT doesn't assume a specfic dsitribution rather it finds points where we have significant changes in the underlying process. So I feel that we can continue using it.
+
+
+PS. Just in case if you wounder. On 2018-02-21 system got a critical linux kernel update
+to alleviate Meltdown-Spectre vulnerabilities. On 2018-06-28 system got another
+kernel update which is more robust and hit the performance less
+
+
+
+
+
