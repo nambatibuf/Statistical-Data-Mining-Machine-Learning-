@@ -1,0 +1,332 @@
+---
+title: "Homework 2. PCA. (60 Points)"
+author: "Nikhil Ambati"
+date: '2023-10-01'
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+always_allow_html: true
+---
+
+# Part 1. PCA vs Linear Regression (6 points).
+
+Let's say we have two 'features': let one be $x$ and another $y$. Recall that in linear regression, we are looking to get a model like:
+
+$$y_i=\beta_0+\beta_1*x_i+\varepsilon_i$$
+
+after the fitting, for each data point we would have: $$y_i=\hat{\beta_0}+\hat{\beta_1}*x_i+r_i$$ where $r_i$ is residual. It can be rewritten as:
+
+$$\hat{\beta_0}+r_i=y_i-\hat{\beta_1}*x_i\;\;\;\;\;(1)$$
+
+The first principal component $z_1$ calculated on $(x,y)$ is $$z_{i1}=\phi_{i1}y_i+\phi_{i2}x_i$$ Dividing it by $\phi_{i1}$: $$\frac{z_{i1}}{\phi_{i1}}=y_i+\frac{\phi_{i2}}{\phi_{i1}}x_i\;\;\;\;\;(2)$$
+
+There is a functional resemblance between equations (1) and (2) (described linear relationship between $y$ and $x$). Is the following true: $$\hat{\beta_0}+r_i=\frac{z_{i1}}{\phi_{i1}}$$ $$\frac{\phi_{i2}}{\phi_{i1}}=-\hat{\beta_1}$$ **Answer**: *(just yes or no)*
+
+Soln: YES.
+
+What is the difference between linear regression coefficients optimization and first PCA calculations?
+
+**Answer**:
+
+PCA calculations aim to identify a sequence of linear combinations of variables that exhibit maximal variance and are mutually uncorrelated. In contrast, linear regression involves both independent and dependent variables. The process of finding the relationship between these variables, while minimizing the difference between predicted and actual values, is known as linear regression coefficients optimization. PCA is predominantly utilized for feature extraction, whereas linear regression and coefficient optimization are used for estimate the impact of predictors on the dependent variable.
+
+```{r}
+#Regression Line below for mtcars data set
+library(ggplot2)
+scatter_plot<-ggplot(data=mtcars,aes(x = hp, y = mpg))+
+  geom_point()+
+  geom_smooth(method="lm",color ="red")
+print(scatter_plot)
+
+#Scree plot I have given below  in the below document.
+```
+
+# Part 2. PCA Exercise (27 points).
+
+In this exercise we will study UK Smoking Data (`smoking.R`, `smoking.rda` or `smoking.csv`):
+
+**Description**
+
+Survey data on smoking habits from the UK. The data set can be used for analyzing the demographic characteristics of smokers and types of tobacco consumed.
+
+**Format**
+
+A data frame with 1691 observations on the following 12 variables.
+
+`gender` - Gender with levels Female and Male.
+
+`age` - Age.
+
+`marital_status` - Marital status with levels Divorced, Married, Separated, Single and Widowed.
+
+`highest_qualification` - Highest education level with levels A Levels, Degree, GCSE/CSE, GCSE/O Level, Higher/Sub Degree, No Qualification, ONC/BTEC and Other/Sub Degree
+
+`nationality` - Nationality with levels British, English, Irish, Scottish, Welsh, Other, Refused and Unknown.
+
+`ethnicity` - Ethnicity with levels Asian, Black, Chinese, Mixed, White and Refused Unknown.
+
+`gross_income` - Gross income with levels Under 2,600, 2,600 to 5,200, 5,200 to 10,400, 10,400 to 15,600, 15,600 to 20,800, 20,800 to 28,600, 28,600 to 36,400, Above 36,400, Refused and Unknown.
+
+`region` - Region with levels London, Midlands & East Anglia, Scotland, South East, South West, The North and Wales
+
+`smoke` - Smoking status with levels No and Yes
+
+`amt_weekends` - Number of cigarettes smoked per day on weekends.
+
+`amt_weekdays` - Number of cigarettes smoked per day on weekdays.
+
+`type` - Type of cigarettes smoked with levels Packets, Hand-Rolled, Both/Mainly Packets and Both/Mainly Hand-Rolled
+
+Source National STEM Centre, Large Datasets from stats4schools, <https://www.stem.org.uk/resources/elibrary/resource/28452/large-datasets-stats4schools>.
+
+Obtained from <https://www.openintro.org/data/index.php?data=smoking>
+
+## Read and Clean the Data
+
+2.1 Read the data from smoking.R or smoking.rda (3 points) \> hint: take a look at source or load functions \> there is also smoking.csv file for a refference
+
+```{r setup, results="hide", warning=F, message=F}
+# load libraries
+library(ggplot2)
+library(plyr)                        
+library(dplyr)
+library(caret)
+library(tibble) 
+library(plotly)
+library(ggplot2)
+library(ggplot2)
+library(devtools)
+install_github("vqv/ggbiplot")
+library(ggbiplot)
+```
+
+```{r}
+# Load data
+data_smokes <- source("C:\\Users\\Nikhil\\Sem 2\\SDM 2\\HomeWork2\\smoking.R")
+data_smoke <- data.frame(do.call(cbind, data_smokes), check.names = FALSE)
+colnames(data_smoke) <- sub("value\\.", "", colnames(data_smoke))
+
+```
+
+Take a look into data
+
+```{r}
+# place holder
+head(data_smoke,  n =8)
+```
+
+There are many fields there so for this exercise lets only concentrate on smoke, gender, age, marital_status, highest_qualification and gross_income.
+
+Create new data.frame with only these columns.
+
+```{r}
+# place holder
+data_smoke_filter<-select(data_smoke,c('smoke','gender','age','marital_status','highest_qualification','gross_income'))
+
+```
+
+2.2 Omit all incomplete records.(3 points)
+
+```{r}
+# place holder
+data_smoke_filter<-na.omit(data_smoke_filter)
+data_filter_final<- data_smoke_filter
+```
+
+2.3 For PCA feature should be numeric. Some of fields are binary (`gender` and `smoke`) and can easily be converted to numeric type (with one and zero). Other fields like `marital_status` has more than two categories, convert them to binary (e.g. is_married, is_devorced). Several features in the data set are ordinal (`gross_income` and `highest_qualification`), convert them to some king of sensible level (note that levels in factors are not in order). (3 points)
+
+```{r}
+# place holder
+# Assuming your column is numeric
+
+data_smoke_filter$gender<-ifelse(data_smoke_filter$gender=='Female',1,0)
+data_smoke_filter$smoke<-ifelse(data_smoke_filter$smoke=='Yes',1,0)
+data_smoke_filter <- data_smoke_filter %>%
+  mutate(is_separated = as.integer(marital_status == "Separated"),
+         is_married = as.integer(marital_status == "Married"),
+         is_divorced = as.integer(marital_status=="Divorced"),
+         is_widowed = as.integer(marital_status == "Widowed"),
+         is_single = as.integer(marital_status == "Single"))
+         
+         
+
+data_smoke_filter$highest_qualification_bin <- factor(data_smoke_filter$highest_qualification, levels = c("No Qualification", "Degree", "GCSE/O Level","GCSE/CSE","Other/Sub Degree", "Higher/Sub Degree", "ONC/BTEC", "A Levels"), labels = c(0, 1, 2, 2, 2, 2, 2, 2))
+data_smoke_filter$highest_qualification_bin<-as.numeric(data_smoke_filter$highest_qualification_bin)
+data_smoke_filter$gross_income_bin <- factor(data_smoke_filter$gross_income,levels=c("Under 2,600", "2,600 to 5,200", "5,200 to 10,400", "10,400 to 15,600","15,600 to 20,800","20,800 to 28,600","28,600 to 36,400","Above 36,400","Refused"
+),labels = c(0, 0, 1, 1, 2, 2, 3, 4, 0))
+data_smoke_filter$gross_income_bin<-as.numeric(data_smoke_filter$gross_income_bin)
+data_smoke_filter <- subset(data_smoke_filter, select = -c(marital_status, highest_qualification, gross_income))
+data_smoke_filter <- na.omit(data_smoke_filter)
+
+```
+
+2.4. Do PCA on all columns except smoking status. (3 points)
+
+```{r}
+# place holder
+pca1 <- prcomp(select(data_smoke_filter, -c("smoke")),scale.=TRUE)
+summary(pca1)
+
+```
+
+2.5 Make a scree plot (3 points)
+
+```{r}
+# place holder
+var <- (pca1$sdev)^2 / sum(pca1$sdev^2)
+round(var,3)
+qplot(c(1:9), var) + 
+  geom_line() + 
+  xlab("Principal Component") + 
+  ylab("Variance") +
+  ggtitle("Scree-Plot") +
+  scale_y_continuous(breaks = seq(0, 0.30, 0.05))
+plot(cumsum(var), type = "o", ylab = "Cumulative PVE",
+    xlab = "Principal Component", col = "brown3")
+```
+
+Comment on the shape, if you need to reduce dimensions home many would you choose
+
+```         
+I've observed a uniform distribution of variance across all PCs. Upon analyzing the plot using the elbow method, 
+a sharp bend is noticeable at PC8. Consequently, utilizing all eight PC's captures approximately 90% of the 
+variance in predictors.
+```
+
+2.6 Make a biplot color points by smoking field. (3 points)
+
+```{r}
+# place holder
+ggbiplot(pca1, scale=0, groups = as.factor(data_smoke_filter$smoke))
+ggplotly(ggbiplot(pca1, scale = 0),groups = as.factor(data_smoke_filter$smoke))
+```
+
+Comment on observed biplot.
+
+```         
+The variables 'is_separated,' 'is_divorced,' and 'gender' exhibit a highly positve correlation. This suggests a 
+discernible statistical relationship, indicating that individuals who are identified as separated or divorced also 
+tend to be more likely associated with the female gender. Furthermore, there exists a noteworthy negative correlation 
+between 'age' and 'highest_qualification_bin.' This mean that on average, as individuals' ages increase, 
+their categorized highest qualifications tend to decrease, or vice versa. 
+```
+
+Can we use first two PC to discriminate smoking?
+
+```         
+The initial two principal components encapsulate approximately 44% of the total variance. 
+This observation prompts the consideration that relying solely on the first two principal 
+components may not be sufficiently discriminative for distinguishing smoking behavior.
+```
+
+2.7 Based on the loading vector can we name PC with some descriptive name? (3 points)
+
+```         
+The variables 'is_separated' and 'is_divorced' shows a positive correlation,suggesting a close relationship. 
+We can group them under 'was_married.
+```
+
+2.8 May be some of splits between categories or mapping to numerics should be revisited, if so what will you do differently? (3 points)
+
+```         
+As I mentioned above 'is_separated' and 'is_divorced' shows a positive correlation so would considered one. 
+Also I would remove is_widowed as it give very less value to dataset which we have. 
+```
+
+2.9 Follow your suggestion in 2.10 and redo PCA and biplot (3 points)
+
+```{r}
+# I re filtered everything.
+data_filter_final$gender<-ifelse(data_filter_final$gender=='Female',1,0)
+data_filter_final$smoke<-ifelse(data_filter_final$smoke=='Yes',1,0)
+data_filter_final <- data_filter_final %>%
+  mutate(was_married = as.integer(marital_status == "Divorced"),
+         is_single = as.integer(marital_status == "Single"),
+         is_married = as.integer(marital_status == "Married"),
+         is_widowed = as.integer(marital_status == "Widowed"),
+         was_married = as.integer(marital_status == "Separated"))
+data_filter_final$highest_qualification_bin <- factor(data_filter_final$highest_qualification, levels = c("No Qualification", "Degree", "GCSE/O Level","GCSE/CSE","Other/Sub Degree", "Higher/Sub Degree", "ONC/BTEC", "A Levels"), labels = c(0, 1, 2, 2, 2, 2, 2, 2))
+data_filter_final$highest_qualification_bin<-as.numeric(data_filter_final$highest_qualification_bin)
+data_filter_final$gross_income_bin <- factor(data_filter_final$gross_income,levels=c("Under 2,600", "2,600 to 5,200", "5,200 to 10,400", "10,400 to 15,600","15,600 to 20,800","20,800 to 28,600","28,600 to 36,400","Above 36,400","Refused"
+),labels = c(0, 0, 1, 1, 2, 2, 3, 4, 0))
+data_filter_final$gross_income_bin<-as.numeric(data_filter_final$gross_income_bin)
+data_filter_final <- subset(data_filter_final, select = -c(marital_status, highest_qualification, gross_income))
+data_filter_final <- na.omit(data_filter_final)
+#Redo the PCA
+pca_new <- prcomp(select(data_filter_final, -c("smoke", "is_widowed")),scale.=TRUE)
+pca_new
+summary(pca_new)
+ggbiplot(pca_new, scale=0, groups = as.factor(data_filter_final$smoke))
+ggplotly(ggbiplot(pca_new, scale = 0),groups = as.factor(data_filter_final$smoke))
+```
+
+# Part 3. Freestyle. (27 points).
+
+Get the data set from your final project (or find something suitable). The data set should have at least four variables and it shouldn't be used in class PCA examples: iris, mpg, diamonds and so on).
+
+-   Convert a columns to proper format (9 points)
+-   Perform PCA (3 points)
+-   Make a skree plot (3 points)
+-   Make a biplot (3 points)
+-   Discuss your observations (9 points)
+
+```{r}
+#The dataset contains student information, including gender, race/ethnicity, parental education, lunch type, test preparation, and math scores. The primary objective is to predict student pass or fail based on these attributes.
+data_freestyle <- read.csv("C:\\Users\\Nikhil\\Sem 2\\SDM 2\\HomeWork2\\Student_performance.csv")
+data_freestyle<- na.omit(data_freestyle)
+
+#1.Convert a columns to proper format
+# 1st convertion change gender into binary
+data_freestyle$gender<-ifelse(data_freestyle$gender=='female',1,0)
+#In the race.ethnicity column we have Indian and Chinese which are Asians so combining them into 1. Also  African American and black ethinicty is same so we combine them to 1.
+data_freestyle$race.ethnicity <- ifelse(data_freestyle$race.ethnicity %in% c("Indian", "Chinese"), "Asian", data_freestyle$race.ethnicity)
+data_freestyle$race.ethnicity <- ifelse(data_freestyle$race.ethnicity %in% c("African American", "Black"), "Black", data_freestyle$race.ethnicity)
+#Catagories asians as 0, White as 1, and black as 2
+data_freestyle$race.ethnicity <- ifelse(data_freestyle$race.ethnicity == "Asian", 0,
+                              ifelse(data_freestyle$race.ethnicity == "White", 1,
+                                     ifelse(data_freestyle$race.ethnicity == "Black", 2, NA)))
+#Remove lunch, parental.level.of.education columns as it doesn't show any signifance 
+data_freestyle <- subset(data_freestyle, select = -c(lunch))
+#Catagories test.preparation.course into binary
+data_freestyle$test.preparation.course <- ifelse(data_freestyle$test.preparation.course == "none", 0, 1)
+#Change the parental.level education into categories
+data_freestyle$parental_level <- factor(data_freestyle$parental.level.of.education, levels = c(
+  "some college", "master's degree", "associate's degree", "high school", "some high school", "bachelor's degree"
+), labels = c(1, 1, 1, 0, 0, 2))
+data_freestyle <- subset(data_freestyle, select = -c(parental.level.of.education))
+data_freestyle <- data_freestyle %>% 
+  mutate(
+    gender = as.numeric(gender),
+    race.ethnicity = as.numeric(race.ethnicity),
+    test.preparation.course = as.numeric(test.preparation.course),
+    math.score = as.integer(math.score),
+    parental_level = as.numeric(as.factor(parental_level))
+  )
+data_freestyle <- na.omit(data_freestyle)
+
+#2.Performed PCA for all except overall score
+pca2 <- prcomp(select(data_freestyle, -c("Overall.Result")),scale.=TRUE)
+pca2
+summary(pca2)
+
+#3. Made a scree plot
+var <- (pca2$sdev)^2 / sum(pca2$sdev^2)
+round(var,3)
+qplot(c(1:5), var) + 
+  geom_line() + 
+  xlab("Principal Component") + 
+  ylab("Variance") +
+  ggtitle("Scree-Plot") +
+  scale_y_continuous(breaks = seq(0, 0.30, 0.05))
+plot(cumsum(var), type = "o", ylab = "Cumulative PVE",
+    xlab = "Principal Component", col = "brown3")
+
+
+#4.Make a big plot
+ggbiplot(pca2, scale=0, groups = as.factor(data_freestyle$Overall.Result))
+
+```
+
+#5.Discuss your observations (9 points) I consider four features to be particularly crucial for our dataset as we can see a sharp bend after that. Furthermore, there seems to be a negative correlation between gender and math scores. In my assessment, the existing category divisions adequately capture the essence of the data, and I don't see the necessity for introducing new categories. However, I believe that incorporating additional features could enhance the model's ability to accurately predict pass or fail outcomes.
+
