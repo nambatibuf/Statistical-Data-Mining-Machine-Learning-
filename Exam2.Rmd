@@ -1,0 +1,582 @@
+---
+title: "EAS509 Final Exam"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+
+Submit your answers as a single pdf attach all R code. Failure to do so will result in grade reduction.
+
+The exam must be done individually, with no discussion or help with others. Breaking this rule will result in an automatic 0 grade.
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library(tsibble)
+library(data.table)
+library(fabletools)
+library(tsibbledata)
+library(forecast)
+library(fable)
+library(arulesViz)
+library(data.table)
+library(fpp3)
+library(ggplot2)
+library(cowplot)
+library(tidyverse)
+
+```
+
+
+# Part A (30 points) - each question worth 1 points
+
+Some questions have multiple answers
+
+1.	Which simple forecasting method says the forecast is equal to the mean of the historical data?
+a.	Average Method
+b.	Naïve Method
+c.	Seasonal Naïve Method
+d.	Drift Method
+
+**Answer:a.	Average Method **
+
+2.	Which simple forecasting method says the forecast is equal to the last observed value?
+a.	Average Method
+b.	Naïve Method
+c.	Seasonal Naïve Method
+d.	Drift Method
+
+**Answer:b.	Naïve Method **
+
+3.	Which simple forecasting method is equivalent to extrapolating a line draw between the first and lost observations?
+a.	Average Method
+b.	Naïve Method
+c.	Seasonal Naïve Method
+d.	Drift Method
+
+**Answer:d.	Drift Method**
+
+4.	Which of the following is an assumption made about forecasting residuals during point forecast?
+a.	Residuals are normally distributed
+b.	Residuals are uncorrelated
+c.	Residuals have constant variance
+d.	None of the above
+
+**Answer: b. Residuals are uncorrelated**
+
+5.	Which of the following is an assumption made about forecasting residuals during interval forecasting? (multiple answers)
+a.	Residuals have mean zero
+b.	Residuals are normally distributed
+c.	Residuals have constant variance
+d.	None of the above
+
+**Answer:a.	Residuals have mean zero,b.	Residuals are normally distributed & c.	Residuals have constant variance** all should present for full score
+
+6.	What is the consequence of forecasting residuals that are not uncorrelated?
+a.	Prediction intervals are difficult to calculate
+b.	Information is left in the residuals that should be used
+c.	Forecasts are biased
+d.	None of the above
+
+**Answer: b.	Information is left in the residuals that should be used**
+
+7.	What is the consequence of forecasting residuals that don’t have mean zero?
+a.	Prediction intervals are difficult to calculate
+b.	Information is left in the residuals that should be used
+c.	Forecasts are biased
+d.	None of the above
+
+**Answer: c.	Forecasts are biased**
+
+8.	Which measure of forecast accuracy is scale independent?
+a.	MAE
+b.	MSE
+c.	RMSE
+d.	MAPE
+
+**Answer: d.	MAPE**
+
+9.	Calculation of forecasts is based on what?
+a.	Test set
+b.	Training set
+c.	Both
+d.	Neither
+
+**Answer: b.	Training set**
+
+10.	Forecast accuracy is based on what?
+a.	Test set
+b.	Training set
+c.	Both
+d.	Neeither
+
+**Answer: a.	Test set**
+
+11.	A series that is influenced by seasonal factors is known as what?
+a.	Trend
+b.	Seasonal
+c.	Cyclical
+d.	White Noise
+
+**Answer: b.	Seasonal**
+
+12.	Data that exhibits rises and falls that are not of a fixed period is known as what?
+a.	Trend
+b.	Seasonal
+c.	Cyclical
+d.	White Noise
+
+**Answer: a. Trend & c. Cyclicale** either or all is ok for full credit
+
+13.	Data that is uncorrelated over time is known as what?
+a.	Trend
+b.	Seasonal
+c.	Cyclical
+d.	White Noise
+
+**Answer: d.	White Noise**
+
+14.	Which of the following time series decomposition models is appropriate when the magnitude of the seasonal fluctuations are not proportional to the level?
+a.	Additive
+b.	Multiplicative
+c.	Both
+d.	Neither
+
+**Answer: a.	Additive**
+
+15.	Which of the following time series decomposition models is appropriate when the magnitude of the seasonal fluctuations are proportional to the level?
+a.	Additive
+b.	Multiplicative
+c.	Both
+d.	Neither
+
+**Answer: b.	Multiplicative **   
+
+
+Exhibit 1
+![Figure1](Fig1.png)
+
+16.	Refer to Exhibit 1. Line A is which simple forecasting method?CHECK
+a.	Average Method
+b.	Naïve Method
+c.	Seasonal Naïve Method
+d.	Drift 
+
+**Answer: b.	Naïve Method**
+
+17.	Refer to Exhibit 1. Line B is which simple forecasting method?cHECK
+a.	Average Method
+b.	Naïve Method
+c.	Seasonal Naïve Method
+d.	Drift Method
+
+**Answer: a.	Average Method**
+
+18.	Refer to Exhibit 1. Line C is which simple forecasting method?CHECK
+a.	Average Method
+b.	Naïve Method
+c.	Seasonal Naïve Method
+d.	Drift Method
+
+**Answer: c.	Seasonal Naïve Method**
+
+Exhibit 2
+![Figure2](Fig2.png)
+
+19.	Refer to Exhibit 2. Line A is which simple forecasting method?
+a.	Average Method
+b.	Naïve Method
+c.	Seasonal Naïve Method
+d.	Drift Method
+
+**Answer: d.	Drift Method**
+
+20.	Refer to Exhibit 2. Line B is which simple forecasting method?
+a.	Average Method
+b.	Naïve Method
+c.	Seasonal Naïve Method
+d.	Drift Method
+
+**Answer: b.	Naïve Method**
+
+21.	Refer to Exhibit 2. Line C is which simple forecasting method?
+a.	Average Method
+b.	Naïve Method
+c.	Seasonal Naïve Method
+d.	Drift Method
+
+**Answer: a.	Average Method**
+
+
+Exhibit 3
+![Figure3](Fig3.png)
+
+22.	Refer to Exhibit 3. The peaks are in which quarter?
+a.	Quarter 1
+b.	Quarter 2
+c.	Quarter 3
+d.	Quarter 4
+
+**Answer: d.	Quarter 4**
+
+23.	Refer to Exhibit 3. The trough are in which quarter?
+a.	Quarter 1
+b.	Quarter 2
+c.	Quarter 3
+d.	Quarter 4
+
+**Answer: b.	Quarter 2** there are few in Q3 but largly it is Q2
+
+Exhibit 4
+![Figure4](Fig4.png)
+
+24.	Refer to Exhibit 4. The peaks are in which quarter?
+a.	Quarter 1
+b.	Quarter 2
+c.	Quarter 3
+d.	Quarter 4
+
+**Answer: d.	Quarter 4**
+
+25.	Refer to Exhibit 4. The trough are in which quarter?
+a.	Quarter 1
+b.	Quarter 2
+c.	Quarter 3
+d.	Quarter 4
+
+**Answer: b.	Quarter 2**
+
+26.	Refer to Exhibit 4. In which quarter is there a decline in the seasonal affect?
+a.	Quarter 1
+b.	Quarter 2
+c.	Quarter 3
+d.	Quarter 4
+
+**Answer: d.	Quarter 4**
+
+
+Figure 5
+
+| Year 1 |    |    |    | Year 2 |    |    |    |
+|--------|----|----|----|--------|----|----|----|
+| Q1     | Q2 | Q3 | Q4 | Q1     | Q2 | Q3 | Q4 |
+| 10     | 6  | 8  | 12 | 11     | 7  | 9  | 13 |
+
+
+27.	Refer to Figure 5. Using the average method, what is the forecast of Quarter 2 of Year 3? (Don’t use a calculator.)
+a.	7
+b.	9.5
+c.	13.85
+d.	13
+
+**Answer: b.	9.5**
+
+28.	Refer to Figure 5. Using the naïve method, what is the forecast of Quarter 2 of Year 3? (Don’t use a calculator.)
+a.	7
+b.	9.5
+c.	13.85
+d.	13
+
+**Answer:d.	13**
+
+29.	Refer to Figure 5. Using the seasonal naïve method, what is the forecast of Quarter 2 of Year 3? (Don’t use a calculator.)
+a.	7
+b.	9.5
+c.	13.85
+d.	13
+a.	7
+**Answer: a.	7**
+
+30.	Refer to Figure 5. Using the drift method, what is the forecast of Quarter 2 of Year 3? (Don’t use a calculator.)
+a.	7
+b.	9.5
+c.	13.85
+d.	13
+
+**Answer: c.	13.85**
+
+# Part B (30 points)
+Choose a series from us_employment.cvs, the total employment in leisure and hospitality industry in the United States (see, title column).
+
+a. Produce an STL decomposition of the data and describe the trend and seasonality. (4 points)
+
+```{r}
+# I am reading the data of Lesiure and hospitality industry
+data <- fread('us_employment.cvs')
+us_employemnt <- data[Title == 'Leisure and Hospitality']
+head(us_employemnt)
+
+#Now lets convert the data into timeseries.
+
+us_employemnt_TS <- us_employemnt %>%
+  select(Month, Employed) %>%
+  mutate(Month = yearmonth(Month)) %>%
+  as_tsibble(index = Month)
+
+head(us_employemnt_TS)
+#Before Decomposition Plot
+us_employemnt_TS %>%
+  autoplot(Employed) +
+  labs(
+    y = "Persons (thousands)",
+    title = "Total employment in US retail"
+  )
+#STL Decomposition
+us_emp_dcmp <- us_employemnt_TS %>%
+  model(stl = STL(Employed))
+components(us_emp_dcmp)
+
+#After Decomposition Plot
+us_employemnt_TS %>%
+  autoplot(Employed, color = "gray") +
+  autolayer(components(us_emp_dcmp), trend, color = "red") +
+  autolayer(components(us_emp_dcmp), season_adjust, color = "black") +
+  labs(
+    y = "Persons (thousands)",
+    title = "Total employment in Liesure & Hospitailty"
+  )
+
+components(us_emp_dcmp) %>% autoplot()
+
+```
+#The trend is increasing over years but we can see some drops in between 2002 and 2010. And in the initial years from 1940 to 1989, we cant see much variations in seasionality, but later especially in 1990 we can see the seasonnality is maximum.
+b. Do the data need transforming? If so, find a suitable transformation.(4 points)
+```{r}
+us_employemnt_TS %>%
+  features(Employed, features = guerrero)
+
+us_employemnt_TS %>% autoplot((Employed))
+
+
+us_employemnt_TS %>% autoplot(sqrt(Employed)) +
+  labs(y = "Square root turnover")
+
+us_employemnt_TS %>% autoplot(log(Employed)) +
+  labs(y = "Log turnover")
+
+us_employemnt_TS %>% autoplot(box_cox(Employed,-0.2164477)) +
+  labs(y = "Box-Cox transformed turnover")
+
+
+
+```
+#Yes data needs transaformation.I could find that Box-cox and log are very similar but BoxCox is better, So I transfromed our data and stored into new variable.
+
+```{r}
+us_employemnt_Trans <- us_employemnt_TS %>%
+  mutate(Employed = box_cox(Employed, lambda = -0.2164477))
+
+head(us_employemnt_Trans)
+
+```
+
+c. Are the data stationary? If not, find an appropriate differencing which yields stationary data.(4 points)
+```{r}
+#ACF & PCF plots
+gg_tsdisplay(us_employemnt_TS,Employed,plot_type='partial')
+ndiffs(us_employemnt_TS$Employed,alpha=0.05)
+
+```
+# As per my observations from PACF and ACF plots, I feel that data is not stationary. Also 1st differencing should be selected.
+
+d. Identify a couple of ARIMA models that might be useful in describing the time series. Which of your models is the best according to their AICc values?(5 points)
+```{r}
+
+fit <- us_employemnt_Trans %>%
+  model(
+    arima_auto = ARIMA(Employed),
+    #from ACF&pacf plot
+    arima1 = ARIMA(Employed~0+pdq(12,1,0)+PDQ(1,0,0)),
+    arima2 = ARIMA(Employed~0+pdq(2,1,2)+PDQ(0,1,2)),
+    arima3 = ARIMA(Employed~0+pdq(2,1,0))
+  )
+accuracy(fit)
+report(fit[1])
+report(fit[2])
+report(fit[3])
+
+
+```
+#So Ideally we will conslude that whichever AICc values is lower that should be best model. In our case arima1 has AIC (AIC=-10745.64) which is lowest among others, so we will say this model is best.
+
+e. Estimate the parameters of your best model and do diagnostic testing on the residuals. Do the residuals resemble white noise? If not, try to find another ARIMA model which fits better.(5 points)
+```{r}
+final_model <- fit %>% select(arima1)
+report(final_model)
+gg_tsresiduals(final_model )
+augment(final_model) %>% features(.innov, ljung_box, lag=10, dof=2)
+```
+#We found that P values is high than 0.05 so I believe we have white noise and data with white noise is consistent. 
+
+f. Forecast the next 3 years of data. Get the latest figures from https://fred.stlouisfed.org/categories/11 to check the accuracy of your forecasts. (5 points)
+```{r}
+
+arimafitt <- us_employemnt_TS%>%
+model(
+arima1 = ARIMA(Employed~0+pdq(12,1,0)+PDQ(1,0,0), stepwise = FALSE,approximation = FALSE)
+)
+
+ff <- forecast(arimafitt, h = 36)
+ff %>% autoplot(us_employemnt_TS)
+
+#latest data
+latest<- fread('CEU7000000001.csv')
+head(latest)  
+latest %>%
+  mutate(DATE = yearmonth(DATE)) %>%
+  tsibble(index = DATE) -> latestts
+latestts
+
+ff %>% autoplot(us_employemnt_TS)+
+autolayer(latestts, color = 'red')
+```
+
+g. Eventually, the prediction intervals are so wide that the forecasts are not particularly useful. How many years of forecasts do you think are sufficiently accurate to be usable? (3 points)
+```{r}
+#No I dont feel actual and predicted are accurate. It may be because of covid 19 which has impacted the hotel industry (in our case Leisure and hospitality) a lot. Lot of travel restrictions were imposed and that segment so huge losses due to that. I feel that actual data will helps to do the prediction in coming data.
+
+
+```
+
+# Part C (8 points)
+
+##	Consider following transactions:
+
+1.	Eggs, Bread, Milk, Bananas, Onion, Yogurt
+2.	Dill, Eggs, Bread, Bananas, Onion, Yogurt
+3.	Apple, Eggs, Bread, Milk
+4.	Corn, Bread, Milk, Teddy Bear, Yogurt
+5.	Corn, Eggs, Ice Cream, Bread, Onion
+
+## a)	Calculate by hand support, confidence and lift for following rules (without usage of apriory library, show your work) 
+
+### •	{Bananas} -> {Yogurt}     (2 points)
+```
+N= 5
+N_bananas =2 
+N_yogurt = 3
+N_bananas_yogurt =2 
+
+support  = 2/5
+confidence = 2/2
+
+support_yogurt = 3/5
+
+lift = 2/2 / 3/5 = 5/3 which is [confidence/support_yogurt]
+```
+
+### •	{Corn, Bread}->{Onion}     (3 points)
+
+```
+N= 5
+N_Onion =3 
+N_Corn = 2
+N_corn_bread = 2
+N_corn_bread_onion =1
+
+support  = 1/5
+confidence = 1/2
+
+support_onion = 3/5
+
+lift = 1/2 / 3/5 = 3/10 which is [confidence/support_onion]
+```
+
+### •	{Bread}->{Milk, Yogurt}     (3 points)
+
+```
+N= 5
+N_Bread = 5 
+N_Milk_Yogurt = 2
+N_Bread_Milk_Yogurt = 2
+
+
+support  = 2/5
+confidence = 2/5
+
+support_milk_yogurt = 2/5
+
+lift = 2/5 / 2/5 = 1 which is [confidence/support_milk_yogurt]
+```
+
+
+# Part D (32 points)
+
+Online_Retail2.csv contains transaction from online store in long format (i.e. single item per line and lines with same InvoiceNo is single transaction).
+
+a)	Read data and convert it to transactions (hint: transactions function and format argument). (4 points)
+```{r}
+order_data <- fread('Online_Retail2.csv')
+order_data <- order_data %>%
+  select(-CustomerID, -StockCode, -Country, -InvoiceDate)
+head(order_data)
+order_trans <- transactions(order_data, format = 'long')
+order_trans
+head(order_trans)
+```
+b)	Run summary on transactions. How many transactions are there? How many unique items? (4 points)
+```{r}
+summary(order_trans)
+
+#For no of transactions
+no_trans <- length(order_trans)
+
+
+#For no of unique values
+unique_items <- length(itemLabels (order_trans))
+
+
+cat("No of Transactions:", no_trans, "\n")
+cat("Nuo of unique values:", unique_items, "\n")
+
+```
+c)	Inspect (with inspect) first three transactions. What items are in basket with transaction id 536366? (4 points)
+```{r}
+inspect(order_trans[1:3,])
+```
+#In the order with transaction id 536366 we have follwoing items HAND WARMER RED POLKA DOT, and HAND WARMER UNION JACK.
+d)	Visualize top 10 frequent items. What is the most frequent? (4 points)
+
+```{r}
+itemFrequencyPlot(order_trans,topN=10)
+```
+#Most frequent as per plot is WHITE HANGING HEART T-LIGHT HOLDER.
+e)	We want to look at rule which would have at least 100 transactions. What support is corresponding to that? (4 points)
+```{r}
+temp <- 100/nrow(order_trans)
+cat(temp)
+```
+
+f)	Calculate rules with a rule. Use previously calculated support, confidence of 0.9 and maxlen of 4 (we are looking into the rules with up to 4 items). (4 points)
+
+```{r}
+items <- apriori(order_trans,parameter=list(support=0.0041,confidence=0.9,maxlen =4))
+items
+```
+#So we have 1216 rules.
+g)	List top 10 by confidence. What is the sense of confidence (explain on example of the top rule)? (4 
+points)
+
+```{r}
+inspect(head(sort(items,by='confidence'),n=10))
+```
+# From the above data we can say that LHS customer who purchases both {CHRISTMAS TREE HEART DECORATION,SUKI  SHOULDER BAG}  together also  pruchases {DOTCOM POSTAGE} this we can say as the support value is 1. This is the strongest rule in the dataset which we have analysed.
+h)	List top 10 by lift. What is the sense of lift (explain on example of the top rule)? (4 points)
+
+
+```{r}
+inspect(head(sort(items,by='lift'),n=10))
+```
+
+#In the first row we can see lift value as 122.98 ~ 123 which means that a very strong positive association between the items on LHS and ITEMS AND rhs. This indicates that the probability of purchasing a "DOLLY GIRL CHILDRENS BOWL" in same transACSTIN is increased by 123 times when "SPACEBOY CHILDRENS BOWL" and  "DOLLY GIRL CHILDRENS CUP" are there in the transaction, as opposed to when the purchase of the "DOLLY GIRL CHILDRENS BOWL" is made separately from the first two items.
+
+LHS = {DOLLY GIRL CHILDRENS CUP,                                                                                   
+      SPACEBOY CHILDRENS BOWL,                                                                                    
+      SPACEBOY CHILDRENS CUP}
+      
+RHS= {DOLLY GIRL CHILDRENS BOWL}
+
+
+
